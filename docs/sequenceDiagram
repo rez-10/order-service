@@ -1,0 +1,242 @@
+sequenceDiagram
+    autonumber
+
+    %% Actors
+    actor Client
+    actor Reception
+    actor Kitchen
+
+    %% Core Services
+    participant API as Order API (Express)
+    participant Cmd as Command Handler
+    participant Dom as Domain (Aggregate + Invariants)
+    participant DB as PostgreSQL
+    participant Outbox
+    participant Job as Outbox Dispatcher
+    participant Bus as Redpanda
+
+    %% Read Side
+    participant Proj as Projections
+    participant Redis as Redis (Read Store)
+
+    %% External Services
+    participant MealSvc as Meal Token Service
+
+    %% ========== CREATE ORDER ==========
+    Client ->> API: POST /sessions/{id}/orders
+    API ->> Cmd: CreateOrder
+    Cmd ->> Dom: validate + apply
+    Dom -->> Cmd: OrderCreated
+
+    rect rgb(240,240,240)
+        Cmd ->> DB: BEGIN TX
+        Cmd ->> DB: insert order
+        Cmd ->> Outbox: insert OrderCreated
+        Cmd ->> DB: COMMIT
+    end
+
+    API -->> Client: 201 Created
+
+    %% ========== ADD ORDER ITEM ==========
+    Client ->> API: POST /orders/{id}/items
+    API ->> Cmd: AddOrderItem
+    Cmd ->> Dom: validate (status=CREATED)
+    Dom -->> Cmd: OrderItemAdded
+
+    rect rgb(240,240,240)
+        Cmd ->> DB: BEGIN TX
+        Cmd ->> DB: insert order_item
+        Cmd ->> Outbox: insert OrderItemAdded
+        Cmd ->> DB: COMMIT
+    end
+
+    API -->> Client: 200 OK
+
+    %% ========== CONFIRM ORDER ==========
+    Reception ->> API: POST /orders/{id}/confirm
+    API ->> Cmd: ConfirmOrder
+    Cmd ->> Dom: enforce lifecycle
+    Dom -->> Cmd: OrderConfirmed
+
+    rect rgb(240,240,240)
+        Cmd ->> DB: BEGIN TX
+        Cmd ->> DB: update order.status = CONFIRMED
+        Cmd ->> Outbox: insert OrderConfirmed
+        Cmd ->> DB: COMMIT
+    end
+
+    API -->> Reception: 200 OK
+
+    %% ========== OUTBOX DISPATCH ==========
+    Job ->> Outbox: fetch unpublished events
+    Outbox -->> Job: OrderCreated / OrderItemAdded / OrderConfirmed
+    Job -->> Bus: publish events
+    Job ->> Outbox: mark published
+
+    %% ========== PROJECTIONS ==========
+    Bus -->> Proj: OrderCreated
+    Proj ->> Redis: update session-orders
+
+    Bus -->> Proj: OrderItemAdded
+    Proj ->> Redis: update order-detail
+
+    Bus -->> Proj: OrderConfirmed
+    Proj ->> Redis: update reception-queue
+    Proj ->> Redis: update kitchen-queue
+
+    %% ========== READ APIs ==========
+    Client ->> API: GET /sessions/{id}/orders
+    API ->> Redis: read session-orders
+    Redis -->> API: data
+    API -->> Client: 200 OK
+
+    %% ========== ORDER COMPLETION ==========
+    Kitchen ->> MealSvc: mark meal prepared
+    MealSvc -->> Bus: MealPrepared(orderId)
+
+    Bus -->> Proj: MealPrepared
+    Proj ->> Cmd: CompleteOrder (internal)
+    Cmd ->> Dom: validate (status=CONFIRMED)
+    Dom -->> Cmd: OrderCompleted
+
+    rect rgb(240,240,240)
+        Cmd ->> DB: BEGIN TX
+        Cmd ->> DB: update order.status = COMPLETED
+        Cmd ->> Outbox: insert OrderCompleted
+        Cmd ->> DB: COMMIT
+    end
+
+    Job ->> Outbox: dispatch OrderCompleted
+    Bus -->> Proj: OrderCompleted
+    Proj ->> Redis: move to completed-orders
+
+
+order-service/
+├── src/
+│   ├── app.js
+│   ├── server.js
+│
+│   ├── config/                         # Runtime configuration only
+│   │   ├── env.js
+│   │   ├── postgres.js
+│   │   ├── redis.js
+│   │   ├── kafka.js
+│   │   └── schema-registry.js
+│
+│   ├── container/                      # Composition root (DI wiring)
+│   │   └── container.js
+│
+│   ├── http/                           # Transport layer (HTTP only)
+│   │   ├── routes.js
+│   │   ├── middlewares/
+│   │   │   ├── request-id.js
+│   │   │   ├── auth-context.js
+│   │   │   ├── command-metadata.js
+│   │   │   └── validate.js
+│   │   └── controllers/
+│   │       ├── command.controller.js
+│   │       └── query.controller.js
+│
+│   ├── application/                    # Application layer (CQRS write side)
+│   │   └── commands/
+│   │       ├── create-order/
+│   │       │   └── handler.js
+│   │       ├── add-order-items/
+│   │       │   └── handler.js
+│   │       ├── confirm-order/
+│   │       │   └── handler.js
+│   │       └── complete-order/
+│   │           └── handler.js
+│
+│   ├── domain/                         # Pure business rules (FINAL)
+│   │   ├── order.aggregate.js
+│   │   ├── order-item.entity.js
+│   │   ├── order.lifecycle.js
+│   │   └── invariants.js
+│
+│   ├── persistence/                    # Write-side persistence
+│   │   ├── unit-of-work.js             # Postgres UoW (IMPLEMENTED)
+│   │   └── repositories/
+│   │       ├── order.repository.js
+│   │       ├── order-item.repository.js
+│   │       ├── command-dedup.repository.js
+│   │       └── outbox.repository.js
+│
+│   ├── events/                         # Event definitions + consumers
+│   │   ├── definitions/                # (Phase 7)
+│   │   │   ├── order-created.js
+│   │   │   ├── order-items-added.js
+│   │   │   ├── order-confirmed.js
+│   │   │   └── order-completed.js
+│   │   └── consumers/                  # kitchen renders
+│   │       └── meal-prepared.consumer.js
+│
+│   ├── projections/                    # Event → Read model logic (Phase 8)
+│   │   ├── session-orders.projection.js
+│   │   ├── order-detail.projection.js
+│   │   ├── reception-queue.projection.js
+│   │   ├── kitchen-queue.projection.js
+│   │   └── completed-orders.projection.js
+│
+│   ├── read-models/                    # Redis-only read storage
+│   │   └── redis/
+│   │       ├── session-orders.repo.js
+│   │       ├── order-detail.repo.js
+│   │       └── queues.repo.js
+│
+│   ├── infra/                          # External systems + circuit breakers
+│   │   ├── redis/
+│   │   │   ├── redis.client.js
+│   │   │   └── redis.health.js
+│   │   ├── kafka/
+│   │   │   ├── kafka.producer.js
+│   │   │   └── kafka.consumer.js
+│   │   └── schema-registry/
+│   │       └── registry.client.js
+│
+│   ├── jobs/                           # Background workers
+│   │   └── outbox-dispatcher.job.js    
+│
+│   └── shared/                         # Cross-cutting utilities
+│       ├── async/
+│       │   └── asyncHandler.js
+│       ├── clock/
+│       │   └── clock.js
+│       ├── errors/                     # error model
+│       │   ├── AppError.js
+│       │   ├── errorCodes.js
+│       │   ├── errorStore.js
+│       │   └── errorHandler.js
+│       ├── logger/
+│       │   ├── logger.js
+│       │   ├── serializers.js
+│       │   ├── childLogger.js
+│       │   └── requestContext.js
+│       ├── response/
+│       │   ├── successResponse.js
+│       │   ├── errorResponse.js
+│       │   └── formatData.js
+│       └── index.js
+│
+├── migrations/                        
+│   ├── 001_create_orders.sql
+│   ├── 002_create_order_items.sql
+│   ├── 003_create_command_dedup.sql
+│   ├── 004_create_outbox.sql
+│   └── 005_indexes.sql
+│
+└── docs/
+    └── architecture/
+        ├── canonical-system-sequence.md
+        ├── resilience-failure-semantics.md
+        ├── write-read-schemas.md
+        ├── lifecycle-hardening.md
+        └── outbox-dispatcher.md
+
+config/postgres.js
+        ↓
+infra/postgres.pool.js
+        ↓
+container/container.js
+        ↓
+repositories / uow

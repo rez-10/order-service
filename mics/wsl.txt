@@ -1,0 +1,14 @@
+cat /etc/os-release - in which os you're in
+wsl -l -v for list
+wsl -d Ubuntu for chaing environments of os
+
+mkdir -p tests
+rez@Vishnu:/mnt/d/prototype/microservices/orderService$ mkdir -p tests/{domain,commands,http,projections,failures,fakes}
+rez@Vishnu:/mnt/d/prototype/microservices/orderService$ tree tests
+Command 'tree' not found, but can be installed with:
+sudo snap install tree
+
+
+find tests -type f, see all files listed in tree in test dir
+tree tests 
+tree tests -f

@@ -1,0 +1,47 @@
+{
+  "name": "order-service",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Order Service built on strict CQRS, Redis-only reads, and transactional outbox for resilient, audit-safe workflows.",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "NODE_ENV=development node -r dotenv/config src/server.js",
+    "staging": "NODE_ENV=staging node src/server.js",
+    "prod": "NODE_ENV=production node src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test",
+    "test:watch": "node --test --watch",
+    "test:ci": "node --test --test-reporter=spec",
+    "test:single": "node --test tests/commands/create-order.handler.test.js",
+    "ttest": "NODE_ENV=test node --test",
+    "ttest:watch": "NODE_ENV=test node --test --watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "ioredis": "^5.4.1",
+    "kafkajs": "^2.2.4",
+    "pg": "^8.11.5",
+    "pino": "^9.0.0",
+    "pino-http": "^9.0.0",
+    "uuid": "^9.0.1",
+    "zod": "^4.3.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "assert": "^2.1.0",
+    "dotenv": "^16.5.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^9.1.2",
+    "node-test": "^1.4.6",
+    "prettier": "^3.3.3",
+    "supertest": "^7.1.4"
+  }
+}

@@ -1,0 +1,200 @@
+src/
+D:.
+│   app.js
+│   server.js
+│
+├───application
+│   └───commands
+│       ├───add-order-items
+│       │       handler.js
+│       │
+│       ├───complete-order
+│       │       handler.js
+│       │
+│       ├───confirm-order
+│       │       handler.js
+│       │
+│       └───create-order
+│               handler.js
+│
+├───config
+│       env.js
+│       index.js
+│       kafka.js
+│       logger.js
+│       postgres.js
+│       redis.js
+│       schema-registry.js
+│
+├───container
+│       container.js
+│       createEvents.js
+│       createHandlers.js
+│       createHttp.js
+│       createInfra.js
+│       createRepositories.js
+│
+├───domain
+│       invariants.js
+│       order-item.entity.js
+│       order.aggregate.js
+│       order.lifecycle.js
+│
+├───events
+│   ├───consumers
+│   │       base-consumer.js
+│   │       completed-orders.consumer.js
+│   │       kitchen-queue.consumer.js
+│   │       order-detail.consumer.js
+│   │       reception-queue.consumer.js
+│   │       session-orders.consumer.js
+│   │
+│   ├───definitions
+│   │       order-completed.js
+│   │       order-confirmed.js
+│   │       order-created.js
+│   │       order-items-added.js
+│   │
+│   └───outbox
+│           outbox-dispatcher.job.js
+│           outbox.publisher.js
+│           outbox.repository.js
+│
+├───http
+│   │   routes.js
+│   │
+│   ├───controllers
+│   │       command.controller.js
+│   │       command2.controller.js
+│   │       query.controller.js
+│   │
+│   └───middlewares
+│           auth-context.js
+│           command-metadata.js
+│           request-id.js
+│
+├───infra
+│   ├───kafka
+│   │       index.js
+│   │       kafka.client.js
+│   │       kafka.consumer.js
+│   │       kafka.health.js
+│   │       kafka.producer.js
+│   │
+│   ├───postgres
+│   │       index.js
+│   │       postgres.errors.js
+│   │       postgres.health.js
+│   │       postgres.pool.js
+│   │       postgres.transaction.js
+│   │
+│   ├───redis
+│   │       index.js
+│   │       redis.breaker.js
+│   │       redis.client.js
+│   │       redis.health.js
+│   │
+│   └───schema-registry
+│           index.js
+│           registry.client.js
+│           registry.health.js
+│
+├───persistence
+│   │   unit-of-work.js
+│   │
+│   └───repositories
+│           command-dedup.repository.js
+│           order-item.repository.js
+│           order.repository.js
+│           outbox.repository.js
+│
+├───projections
+│       completed-orders.projection.js
+│       kitchen-queue.projection.js
+│       order-detail.projection.js
+│       reception-queue.projection.js
+│       session-orders.projection.js
+│
+├───read-models
+│   └───redis
+│           completed-orders.repo.js
+│           order-detail.repo.js
+│           queues.repo.js
+│           session-orders.repo.js
+│
+└───shared
+    │   index.js
+    │
+    ├───async
+    │       asyncHandler.js
+    │
+    ├───clock
+    │       clock.js
+    │
+    ├───context
+    │       requestContext.js
+    │
+    ├───errors
+    │       AppError.js
+    │       errorCodes.js
+    │       errorHandler.js
+    │       errorStore.js
+    │
+    ├───logger
+    │       baseLogger.js
+    │       createLogger.js
+    │
+    └───response
+            errorResponse.js
+            formatData.js
+            successResponse.js
+
+tests/
+├───commands
+│       add-order-items.handler.test.js
+│       complete-order.handler.test.js
+│       confirm-order.handler.test.js
+│       create-order.handler.test.js
+│
+├───domain
+│       order.invariants.test.js
+│       order.lifecycle.test.js
+│
+├───failures
+│       dedup-hit.test.js
+│       outbox-failure.test.js
+│       redis-down.test.js
+│
+├───fakes
+│       fake-outbox.js
+│       fake-postgres.js
+│       fake-redis.js
+│       fake-repositories.js
+│       fake-unit-of-work.js
+│
+├───http
+│       command.contract.test.js
+│       query.contract.test.js
+│
+└───projections
+        order-detail.projection.test.js
+        order-items-added.projection.test.js
+        replay-safety.test.js
+        session-orders.projection.test.js
+        zset-pattern.test.js
+
+12. Patch Plan (Exact Order)
+
+Create tests/fakes/index.js
+
+Replace DomainError imports with AppError
+
+Rename projection calls to .project(event)
+
+Implement ZSET methods in FakeRedis
+
+Install supertest
+
+Re-run node --test
+
+Do NOT change production code until this is done.
