@@ -25,6 +25,14 @@ export const ErrorStore = {
       meta,
     });
   },
+  unauthorized(message = "Unauthorized", meta = {}) {
+    return new AppError({
+      message,
+      statusCode: 401,
+      code: ERROR_CODES.APP_UNAUTHORIZED,
+      meta,
+    });
+  },
 
   conflict(message = "Conflict", meta = {}) {
     return new AppError({
