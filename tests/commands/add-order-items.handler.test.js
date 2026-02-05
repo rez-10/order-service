@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert";
 
 import { AddOrderItemsHandler } from "../../src/application/commands/add-order-items/handler.js";
-import { FakeUnitOfWork } from "../repositories/fake-unit-of-work.js";
+import { FakeUnitOfWork } from "../support/fake-unit-of-work.js";
 import { createFakeRepositories } from "../fakes/fake-repositories.js";
 
 test("AddOrderItems adds items and emits event", async () => {
