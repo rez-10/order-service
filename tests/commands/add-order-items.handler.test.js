@@ -17,7 +17,7 @@ test("AddOrderItems adds items and emits event", async () => {
   });
 
   const handler = new AddOrderItemsHandler({
-    uow,
+    unitOfWork: uow,
     ...repos,
     logger: console
   });

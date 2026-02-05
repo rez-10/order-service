@@ -18,7 +18,7 @@ test("ConfirmOrder transitions CREATED → CONFIRMED and emits event", async () 
   });
 
   const handler = new ConfirmOrderHandler({
-    uow,
+    unitOfWork: uow,
     ...repos,
     logger: console
   });
@@ -28,7 +28,7 @@ test("ConfirmOrder transitions CREATED → CONFIRMED and emits event", async () 
     command: { type: "ConfirmOrder", orderId: "o1" }
   });
 
-  const order = await repos.orderRepository.findById("o1");
+  const order = await repos.orderRepository.getById("o1");
 
   assert.equal(order.status, "CONFIRMED");
   assert.equal(repos.outboxRepository.events.length, 1);

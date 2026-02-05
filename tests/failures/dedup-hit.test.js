@@ -10,17 +10,17 @@ test("dedup hit causes idempotent noop", async () => {
   const repos = createFakeRepositories();
 
   // Simulate dedup hit
-  repos.commandDedupRepository.has = async () => true;
+  repos.commandDedupRepository.exists = async () => true;
 
   const handler = new CreateOrderHandler({
-    uow,
+    unitOfWork: uow,
     ...repos,
     logger: console
   });
 
   await handler.execute({
-    metadata: { commandId: "cmd-1" },
-    command: { sessionId: "s1" }
+    metadata: { commandId: "cmd-1", issuedAt: new Date() },
+    command: { type: "CreateOrder", sessionId: "s1" }
   });
 
   assert.equal(repos.orderRepository.created.length, 0);

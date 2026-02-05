@@ -46,34 +46,17 @@
 import test from "node:test";
 import assert from "node:assert";
 
-import { OrderAggregate } from "../../src/domain/order.aggregate.js";
+import { assertOrderAllowsItemMutation, assertValidOrderTransition } from "../../src/domain/invariants.js";
+import { ORDER_STATUS } from "../../src/domain/order.lifecycle.js";
 
-test("order must have an id", () => {
-  assert.throws(() => {
-    new OrderAggregate({
-      sessionId: "s1",
-      status: "CREATED",
-      createdAt: Date.now()
-    });
-  }, Error);
+test("invalid transitions are rejected", () => {
+  const order = { status: ORDER_STATUS.CREATED };
+
+  assert.throws(() => assertValidOrderTransition(order, ORDER_STATUS.COMPLETED), Error);
 });
 
-test("order must have a sessionId", () => {
-  assert.throws(() => {
-    new OrderAggregate({
-      id: "o1",
-      status: "CREATED",
-      createdAt: Date.now()
-    });
-  }, Error);
-});
+test("item mutation only allowed in CREATED status", () => {
+  const order = { status: ORDER_STATUS.CONFIRMED };
 
-test("order must have createdAt timestamp", () => {
-  assert.throws(() => {
-    new OrderAggregate({
-      id: "o1",
-      sessionId: "s1",
-      status: "CREATED"
-    });
-  }, Error);
+  assert.throws(() => assertOrderAllowsItemMutation(order), Error);
 });

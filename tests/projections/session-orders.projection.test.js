@@ -5,16 +5,17 @@ import { SessionOrdersProjection } from "../../src/projections/session-orders.pr
 
 test("OrderCreated updates session orders", async () => {
   const repo = {
-    upsert: (sid, oid) => (repo.value = { sid, oid })
+    upsert: (sid, doc) => (repo.value = { sid, doc })
   };
 
-  const projection = new SessionOrdersProjection(repo);
+  const projection = new SessionOrdersProjection({ repo });
 
-  await projection.project({
-    type: "OrderCreated",
-    sessionId: "s1",
-    orderId: "o1"
+  await projection.onOrderCreated({
+    payload: { sessionId: "s1", orderId: "o1" },
+    occurredAt: new Date().toISOString()
   });
 
-  assert.deepEqual(repo.value, { sid: "s1", oid: "o1" });
+  assert.equal(repo.value.sid, "s1");
+  assert.equal(repo.value.doc.orderId, "o1");
+  assert.equal(repo.value.doc.status, "CREATED");
 });

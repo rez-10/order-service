@@ -3,9 +3,9 @@ export class FakeOrderItemRepository {
     this.items = [];
   }
 
-  async addMany(orderId, items) {
-    items.forEach(item => {
-      this.items.push({ orderId, ...item });
+  async bulkCreate(items) {
+    items.forEach((item) => {
+      this.items.push({ ...item });
     });
   }
 
