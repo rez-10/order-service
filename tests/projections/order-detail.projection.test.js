@@ -5,16 +5,17 @@ import { OrderDetailProjection } from "../../src/projections/order-detail.projec
 
 test("OrderCreated writes order detail", async () => {
   const repo = {
-    upsert: (doc) => (repo.doc = doc)
+    store: new Map(),
+    set: (key, doc) => repo.store.set(key, doc),
+    get: (key) => repo.store.get(key)
   };
 
-  const projection = new OrderDetailProjection(repo);
+  const projection = new OrderDetailProjection({ repo });
 
-  await projection.project({
-    type: "OrderCreated",
-    orderId: "o1",
-    sessionId: "s1"
+  await projection.onOrderCreated({
+    payload: { orderId: "o1", sessionId: "s1" },
+    occurredAt: new Date().toISOString()
   });
 
-  assert.equal(repo.doc.orderId, "o1");
+  assert.equal(repo.store.get("o1").orderId, "o1");
 });

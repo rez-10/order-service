@@ -17,7 +17,7 @@ test("CompleteOrder transitions CONFIRMED → COMPLETED", async () => {
   });
 
   const handler = new CompleteOrderHandler({
-    uow,
+    unitOfWork: uow,
     ...repos,
     logger: console
   });
@@ -27,8 +27,9 @@ test("CompleteOrder transitions CONFIRMED → COMPLETED", async () => {
     command: { type: "CompleteOrder", orderId: "o1" }
   });
 
-  const order = await repos.orderRepository.findById("o1");
+  const order = await repos.orderRepository.getById("o1");
 
   assert.equal(order.status, "COMPLETED");
   assert.equal(repos.outboxRepository.events.length, 1);
+  assert.ok(uow.committed);
 });

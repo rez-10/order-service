@@ -12,19 +12,23 @@
 // }
 
 export class FakeUnitOfWork {
-  constructor({ orderRepo, orderItemRepo, dedupRepo, outboxRepo }) {
-    this.orderRepo = orderRepo;
-    this.orderItemRepo = orderItemRepo;
-    this.dedupRepo = dedupRepo;
-    this.outboxRepo = outboxRepo;
+  constructor() {
+    this.committed = false;
+    this.rolledBack = false;
+    this.transactions = [];
   }
 
   async withTransaction(fn) {
-    return fn({
-      orders: this.orderRepo,
-      orderItems: this.orderItemRepo,
-      commandDedup: this.dedupRepo,
-      outbox: this.outboxRepo
-    });
+    const tx = {};
+    this.transactions.push(tx);
+
+    try {
+      const result = await fn(tx);
+      this.committed = true;
+      return result;
+    } catch (error) {
+      this.rolledBack = true;
+      throw error;
+    }
   }
 }
