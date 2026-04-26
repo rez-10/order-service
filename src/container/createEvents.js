@@ -15,7 +15,7 @@ import { ReceptionQueueProjection } from "../projections/reception-queue.project
 import { KitchenQueueProjection } from "../projections/kitchen-queue.projection.js";
 import { CompletedOrdersProjection } from "../projections/completed-orders.projection.js";
 
-import { resolveTopicForEvent } from "../events/topic-resolver.js";
+// import { resolveTopicForEvent } from "../events/topic-resolver.js";
 
 /**
  * createEvents
@@ -99,7 +99,7 @@ export function createEvents({ infra, repositories, unitOfWork, logger, clock })
   const outboxPublisher = new OutboxPublisher({
     kafkaProducerFactory: infra.kafka.createProducer,
     schemaRegistry: infra.schemaRegistry,
-    topicResolver: resolveTopicForEvent,
+    // topicResolver: resolveTopicForEvent,
     logger,
   });
 

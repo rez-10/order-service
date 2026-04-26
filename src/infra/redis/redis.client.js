@@ -1,55 +1,93 @@
+// // import { createClient } from "redis";
+// // import { logger } from "../../shared/index.js";
+
+// // export function createRedisClient(config) {
+// //   const client = createClient({
+// //     socket: {
+// //       host: config.host,
+// //       port: config.port,
+// //       reconnectStrategy: (retries) => {
+// //         if (retries >= config.maxReconnectAttempts) {
+// //           logger.error(
+// //             { retries },
+// //             "Redis reconnect attempts exhausted"
+// //           );
+// //           return new Error("Redis reconnect failed");
+// //         }
+
+// //         return Math.min(retries * 100, 2000);
+// //       }
+// //     },
+// //     password: config.password,
+// //     database: config.db
+// //   });
+
+// //   client.on("connect", () => {
+// //     logger.info("Redis client connected");
+// //   });
+
+// //   client.on("error", (err) => {
+// //     logger.error({ err }, "Redis client error");
+// //   });
+
+// //   return client;
+// // }
+
 // import { createClient } from "redis";
-// import { logger } from "../../shared/index.js";
 
-// export function createRedisClient(config) {
-//   const client = createClient({
+// export function createRedisClient({ connection, client, logger }) {
+//   const redis = createClient({
 //     socket: {
-//       host: config.host,
-//       port: config.port,
-//       reconnectStrategy: (retries) => {
-//         if (retries >= config.maxReconnectAttempts) {
-//           logger.error(
-//             { retries },
-//             "Redis reconnect attempts exhausted"
-//           );
-//           return new Error("Redis reconnect failed");
-//         }
-
-//         return Math.min(retries * 100, 2000);
-//       }
+//       host: connection.host,
+//       port: connection.port,
+//       connectTimeout: client.connectTimeout,
 //     },
-//     password: config.password,
-//     database: config.db
+//     username: connection.username,
+//     password: connection.password,
+//     maxRetriesPerRequest: client.maxRetriesPerRequest,
 //   });
 
-//   client.on("connect", () => {
-//     logger.info("Redis client connected");
-//   });
-
-//   client.on("error", (err) => {
+//   redis.on("error", (err) => {
 //     logger.error({ err }, "Redis client error");
 //   });
 
-//   return client;
+//   return redis;
 // }
 
-import { createClient } from "redis";
+// import Redis from "ioredis";
 
-export function createRedisClient({ connection, client, logger }) {
-  const redis = createClient({
-    socket: {
-      host: connection.host,
-      port: connection.port,
-      connectTimeout: client.connectTimeout,
-    },
-    username: connection.username,
-    password: connection.password,
-    maxRetriesPerRequest: client.maxRetriesPerRequest,
-  });
+// export function createRedisClient({ connection, client, logger }) {
+//   const redis = new Redis({
+//     host: connection.host,
+//     port: connection.port,
+//     username: connection.username,
+//     password: connection.password,
 
-  redis.on("error", (err) => {
-    logger.error({ err }, "Redis client error");
-  });
+//     tls: connection.tls,
 
-  return redis;
-}
+//     connectTimeout: client.connectTimeout,
+//     maxRetriesPerRequest: client.maxRetriesPerRequest,
+//     enableOfflineQueue: client.enableOfflineQueue,
+//     lazyConnect: client.lazyConnect,
+
+//     retryStrategy: client.retryStrategy,
+//   });
+
+//   redis.on("connect", () => {
+//     logger?.info("Redis connecting...");
+//   });
+
+//   redis.on("ready", () => {
+//     logger?.info("Redis ready");
+//   });
+
+//   redis.on("error", (err) => {
+//     logger?.error({ err }, "Redis client error");
+//   });
+
+//   redis.on("close", () => {
+//     logger?.warn("Redis connection closed");
+//   });
+
+//   return redis;
+// }

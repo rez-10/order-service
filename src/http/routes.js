@@ -1,8 +1,10 @@
 import express from "express";
 
 // Controllers
-import { commandController } from "./controllers/command.controller.js";
-import { queryController } from "./controllers/query.controller.js";
+// import { commandController } from "./controllers/command.controller.js";
+// import { queryController } from "./controllers/query.controller.js";
+import { commandController as createCommandController } from "./controllers/command.controller.js";
+import { queryController as createQueryController } from "./controllers/query.controller.js";
 
 // Middlewares
 import { validate } from "./middlewares/validate.js";
@@ -21,8 +23,19 @@ import {
 // Schemas (read)
 import { orderIdParamSchema, sessionIdParamSchema } from "./validation/query.schemas.js";
 
-const router = express.Router();
-router.use(authContextMiddleware);
+// const router = express.Router();
+export function createRoutes({ commands, queries, logger }) {
+  const router = express.Router();
+
+  // const commandController = commandController({ commands, logger });
+  // const queryController = queryController({ queries, logger });
+  // export function createRoutes({ commands, queries, logger }) {
+  // const router = express.Router();
+
+  const commandController = createCommandController({ commands, logger });
+  const queryController = createQueryController({ queries, logger });
+
+// router.use(authContextMiddleware);
 /**
  * ============================
  * WRITE SIDE (COMMANDS)
@@ -75,22 +88,23 @@ router.post(
 router.get("/orders/:orderId", validateParams(orderIdParamSchema), queryController.getOrderDetail);
 
 // R2. Orders by Session
-router.get(
-  "/sessions/:sessionId/orders",
-  validateParams(sessionIdParamSchema),
-  queryController.getOrdersBySession
-);
+// router.get(
+//   "/sessions/:sessionId/orders",
+//   validateParams(sessionIdParamSchema),
+//   queryController.getOrdersBySession
+// );
 
 // R3. Reception Queue (CREATED)
-router.get("/reception/pending-confirmation", queryController.getPendingConfirmationQueue);
+// router.get("/reception/pending-confirmation", queryController.getPendingConfirmationQueue);
 
 // R4. Kitchen Queue (CONFIRMED)
 router.get("/kitchen/queue", queryController.getKitchenQueue);
 
 // R5. Completed Orders
 router.get("/orders/completed", queryController.getCompletedOrders);
-
-export default router;
+  return router;
+}
+// export default router;
 
 /**
 ✅ 1. Middleware order is intentional

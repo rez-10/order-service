@@ -27,7 +27,7 @@ export function createApp(container) {
   /* ---------- CORS (explicit, gateway-friendly) ---------- */
   app.use(
     cors({
-      origin: container.config.http?.corsOrigin || false,
+      // origin: container.config.http?.corsOrigin || false,
       credentials: true
     })
   );

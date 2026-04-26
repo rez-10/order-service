@@ -8,7 +8,7 @@ import { OutboxRepository } from "../persistence/repositories/outbox.repository.
 import { SessionOrdersRedisRepo } from "../read-models/redis/session-orders.repo.js";
 import { OrderDetailRedisRepo } from "../read-models/redis/order-detail.repo.js";
 import { QueuesRedisRepo } from "../read-models/redis/queues.repo.js";
-import { CompletedOrdersRedisRepo } from "../read-models/redis/completed-orders.repo.js";
+import { CompletedOrdersQueryRepo } from "../read-models/redis/completed-orders.repo.js";
 
 /**
  * createRepositories
@@ -48,7 +48,7 @@ export function createRepositories({ infra, logger }) {
     redis: infra.redis,
   });
 
-  const completedOrdersRepo = new CompletedOrdersRedisRepo({
+  const completedOrdersRepo = new CompletedOrdersQueryRepo({
     redis: infra.redis,
   });
 

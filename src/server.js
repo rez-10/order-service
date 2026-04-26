@@ -1,9 +1,9 @@
 import http from "http";
-
-if (process.env.NODE_ENV !== "production") {
-  await import("dotenv/config");
-}
-
+import dotenv from "dotenv"
+// if (process.env.NODE_ENV !== "production") {
+//   await import("dotenv/config");
+// }
+dotenv.config({path: './.env.development'})
 /* ---------- config ---------- */
 import { loadConfig } from "./config/index.js";
 
@@ -36,22 +36,37 @@ async function main() {
   /* ============================================================
    * 3. Connect critical infrastructure
    * ============================================================ */
-  try {
-    logger.info("Connecting Redis...");
-    await infra.redis.client.connect();
+  // try {
+  //   logger.info("Connecting Redis...");
+  //   await infra.redis.client.connect();
 
-    logger.info("Checking Redis health...");
-    await infra.redis.health();
+  //   logger.info("Checking Redis health...");
+  //   await infra.redis.health();
 
-    logger.info("Checking Postgres health...");
-    await infra.postgres.health();
-  } catch (err) {
-    logger.fatal(
-      { err },
-      "Critical infrastructure failed during startup. Exiting."
-    );
-    process.exit(1);
-  }
+  //   logger.info("Checking Postgres health...");
+  //   await infra.postgres.health();
+  // } catch (err) {
+  //   logger.fatal(
+  //     { err },
+  //     "Critical infrastructure failed during startup. Exiting."
+  //   );
+  //   process.exit(1);
+  // }
+//   try {
+//   logger.info("Redis already connected during infra bootstrap");
+
+//   logger.info("Checking Redis health...");
+//   await infra.redis.health();
+
+//   logger.info("Checking Postgres health...");
+//   await infra.postgres.health();
+// } catch (err) {
+//   logger.fatal(
+//     { err },
+//     "Critical infrastructure failed during startup. Exiting."
+//   );
+//   process.exit(1);
+// }
 
   /* ============================================================
    * 4. Create HTTP app
@@ -74,20 +89,20 @@ async function main() {
   /* ============================================================
    * 6. Start non-critical background processes
    * ============================================================ */
-  try {
-    logger.info("Starting Kafka consumers...");
-    for (const consumer of Object.values(container.events.consumers)) {
-      await consumer.start();
-    }
+  // try {
+  //   logger.info("Starting Kafka consumers...");
+  //   for (const consumer of Object.values(container.events.consumers)) {
+  //     await consumer.start();
+  //   }
 
-    logger.info("Starting outbox dispatcher...");
-    container.events.dispatcher.start();
-  } catch (err) {
-    logger.error(
-      { err },
-      "Background processes failed to start (service still accepting traffic)"
-    );
-  }
+  //   logger.info("Starting outbox dispatcher...");
+  //   container.events.dispatcher.start();
+  // } catch (err) {
+  //   logger.error(
+  //     { err },
+  //     "Background processes failed to start (service still accepting traffic)"
+  //   );
+  // }
 
   /* ============================================================
    * 7. Graceful shutdown
@@ -106,28 +121,28 @@ async function main() {
       logger.info("HTTP server closed");
 
       /* 2️⃣ Stop background jobs */
-      if (container.events.dispatcher?.stop) {
-        await container.events.dispatcher.stop();
-        logger.info("Outbox dispatcher stopped");
-      }
+      // if (container.events.dispatcher?.stop) {
+      //   await container.events.dispatcher.stop();
+      //   logger.info("Outbox dispatcher stopped");
+      // }
 
-      /* 3️⃣ Stop Kafka consumers */
-      for (const consumer of Object.values(container.events.consumers)) {
-        if (consumer.stop) {
-          await consumer.stop();
-        }
-      }
-      logger.info("Kafka consumers stopped");
+      // /* 3️⃣ Stop Kafka consumers */
+      // for (const consumer of Object.values(container.events.consumers)) {
+      //   if (consumer.stop) {
+      //     await consumer.stop();
+      //   }
+      // }
+      // logger.info("Kafka consumers stopped");
 
-      /* 4️⃣ Close Redis */
-      if (infra.redis.client.isOpen) {
-        await infra.redis.client.quit();
-        logger.info("Redis connection closed");
-      }
+      // /* 4️⃣ Close Redis */
+      // if (infra.redis.client.isOpen) {
+      //   await infra.redis.client.quit();
+      //   logger.info("Redis connection closed");
+      // }
 
-      /* 5️⃣ Close Postgres */
-      await infra.postgres.pool.end();
-      logger.info("Postgres pool closed");
+      // /* 5️⃣ Close Postgres */
+      // await infra.postgres.pool.end();
+      // logger.info("Postgres pool closed");
 
       logger.info("Shutdown completed cleanly");
       process.exit(0);

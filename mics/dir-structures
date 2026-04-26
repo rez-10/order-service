@@ -183,18 +183,271 @@ tests/
         session-orders.projection.test.js
         zset-pattern.test.js
 
-12. Patch Plan (Exact Order)
+er models
+erDiagram
 
-Create tests/fakes/index.js
+    RESTAURANT {
+        uuid restaurant_id PK
+        string name
+        string legal_name
+        string business_type
+        string location
+        string timezone
+        string currency
+        string tax_identifier
+        string service_charge_policy
+        string default_language
+        string contact_email
+        string contact_phone
+        string onboarding_status
+        string status
+        datetime created_at
+        datetime updated_at
+    }
 
-Replace DomainError imports with AppError
+    ZONE {
+        uuid zone_id PK
+        uuid restaurant_id FK
+        string name
+        string type
+        string description
+        int display_order
+        int capacity_limit
+        boolean is_active
+        datetime created_at
+    }
 
-Rename projection calls to .project(event)
+    TABLE {
+        uuid table_id PK
+        uuid restaurant_id FK
+        uuid zone_id FK
+        string table_number
+        int capacity
+        string qr_code
+        int qr_code_version
+        datetime qr_expires_at
+        boolean is_combinable
+        uuid parent_table_id
+        uuid current_session_id
+        string status
+        datetime created_at
+        datetime updated_at
+    }
 
-Implement ZSET methods in FakeRedis
+    SESSION {
+        uuid session_id PK
+        uuid restaurant_id FK
+        uuid table_id FK
+        uuid opened_by FK
+        string session_type
+        int party_size
+        string source
+        string status
+        datetime opened_at
+        datetime last_activity_at
+        datetime auto_close_at
+        datetime closed_at
+        string notes
+        datetime created_at
+    }
 
-Install supertest
+    GUEST {
+        uuid guest_id PK
+        uuid session_id FK
+        string display_name
+        string phone
+        string identifier
+        string loyalty_id
+        string consent_flags
+        datetime created_at
+    }
 
-Re-run node --test
+    STAFF {
+        uuid staff_id PK
+        uuid restaurant_id FK
+        uuid role_id FK
+        string employee_code
+        string name
+        string email
+        string phone
+        string pin_hash
+        string status
+        datetime hire_date
+        datetime last_login_at
+        datetime created_at
+    }
 
-Do NOT change production code until this is done.
+    ROLE {
+        uuid role_id PK
+        string name
+        string description
+        string permission_set
+        boolean is_system_role
+        datetime created_at
+    }
+
+    MENU {
+        uuid menu_id PK
+        uuid restaurant_id FK
+        string name
+        string menu_type
+        datetime valid_from
+        datetime valid_to
+        int display_order
+        boolean active
+        datetime created_at
+        datetime updated_at
+    }
+
+    MENU_ITEM {
+        uuid menu_item_id PK
+        uuid menu_id FK
+        string sku_code
+        string name
+        string description
+        decimal price
+        decimal cost_price
+        string category
+        string tax_category
+        boolean is_veg
+        boolean is_alcoholic
+        boolean available
+        string prep_station
+        int min_order_qty
+        int max_order_qty
+        string image_url
+        datetime created_at
+        datetime updated_at
+    }
+
+    ORDER {
+        uuid order_id PK
+        uuid session_id FK
+        string order_number
+        uuid parent_order_id
+        string created_by
+        string source
+        string status
+        string notes
+        datetime created_at
+        datetime updated_at
+        datetime cancelled_at
+        string cancellation_reason
+    }
+
+    ORDER_ITEM {
+        uuid order_item_id PK
+        uuid order_id FK
+        uuid menu_item_id FK
+        string item_name_snapshot
+        int quantity
+        decimal price_snapshot
+        string modifiers_json
+        string special_instructions
+        string station
+        string status
+        datetime prepared_at
+        datetime served_at
+        datetime cancelled_at
+    }
+
+    PREPARATION_TICKET {
+        uuid ticket_id PK
+        uuid order_item_id FK
+        string station
+        uuid assigned_to FK
+        string priority
+        int expected_prep_time
+        string delay_reason
+        string status
+        datetime started_at
+        datetime completed_at
+        datetime reopened_at
+        datetime created_at
+    }
+
+    BILL {
+        uuid bill_id PK
+        uuid session_id FK
+        string bill_number
+        decimal subtotal
+        decimal tax
+        decimal service_charge
+        decimal discount_total
+        decimal rounding_adjustment
+        decimal total
+        string currency
+        string status
+        datetime generated_at
+        datetime finalized_at
+        datetime reopened_at
+        datetime created_at
+    }
+
+    PAYMENT {
+        uuid payment_id PK
+        uuid bill_id FK
+        string method
+        string provider
+        string transaction_reference
+        decimal amount
+        decimal refunded_amount
+        string status
+        string failure_reason
+        json gateway_payload
+        datetime initiated_at
+        datetime confirmed_at
+        datetime refunded_at
+        datetime created_at
+    }
+
+    RECEIPT {
+        uuid receipt_id PK
+        uuid payment_id FK
+        string receipt_number
+        string receipt_type
+        string format_version
+        string generated_by
+        datetime issued_at
+        datetime created_at
+    }
+
+    AUDIT_LOG {
+        uuid log_id PK
+        uuid actor_id
+        string actor_type
+        string entity_type
+        uuid entity_id
+        string action
+        json before_state
+        json after_state
+        string ip_address
+        string client_type
+        datetime timestamp
+    }
+
+    RESTAURANT ||--o{ ZONE : has
+    RESTAURANT ||--o{ TABLE : owns
+    ZONE ||--o{ TABLE : contains
+
+    RESTAURANT ||--o{ STAFF : employs
+    ROLE ||--o{ STAFF : assigns
+
+    RESTAURANT ||--o{ MENU : provides
+    MENU ||--o{ MENU_ITEM : contains
+
+    TABLE ||--o{ SESSION : hosts
+    SESSION ||--o{ GUEST : includes
+
+    SESSION ||--o{ ORDER : generates
+    ORDER ||--o{ ORDER_ITEM : contains
+
+    ORDER_ITEM ||--|| PREPARATION_TICKET : processed_by
+
+    SESSION ||--|| BILL : settles
+    BILL ||--o{ PAYMENT : paid_by
+    PAYMENT ||--|| RECEIPT : issues
+
+    STAFF ||--o{ AUDIT_LOG : produces
+
+
