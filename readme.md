@@ -196,7 +196,7 @@ Responsible for wiring all layers together.
 
 ## Sequence Diagrams
 
-### Command Flow (Create Order → Outbox → Kafka)
+### Command Flow (Create Order - Outbox - Kafka)
 
 ```mermaid
 sequenceDiagram
